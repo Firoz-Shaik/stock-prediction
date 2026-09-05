@@ -1,5 +1,5 @@
 import React from 'react'
-
+import Button from './Button'
 const Home = () => {
   return (
     <>
@@ -7,6 +7,7 @@ const Home = () => {
         <div className='p-5 text-center bg-light-dark rounded-3 mt-5'>
           <h1 className='display-4 text-white'>Welcome to Stock Predictor</h1>
           <p className='lead text-white'>Predict stock prices with our advanced machine learning model.</p>
+          <Button text='Get Started' class='btn-info' url='/dashboard' />
         </div>
       </div>
     </>

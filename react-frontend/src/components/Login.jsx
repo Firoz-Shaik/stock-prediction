@@ -25,7 +25,7 @@ const Login = () => {
             console.log('Login successful:', response.data)
             setIsAuthenticated(true)
             setError('')
-            navigate('/') // Redirect to home page after successful login
+            navigate('/dashboard') // Redirect to home page after successful login
         }catch(error){
             setError('Invalid credentials')
         }finally {
