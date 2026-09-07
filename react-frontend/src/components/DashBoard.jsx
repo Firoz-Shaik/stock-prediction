@@ -1,22 +1,16 @@
-import { useEffect,useState } from 'react'
+import { useEffect, useState } from 'react'
 import axiosInstance from '../axiosInstance'
 
 const DashBoard = () => {
     const [ticker, setTicker] = useState('');
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
-    const [plotImg, setPlotImg] = useState('');
-    const [ma100, setMA100Url] = useState('');
-    const [ma200, setMA200Url] = useState('');
-    const [predictImg, setPredictImg] = useState('');
-    const [mse,setMSE] = useState('');
-    const [rmse,setRMSE] = useState('');
-    const [r2, setR2] = useState('');
+    const [prediction, setPrediction] = useState(null);
     useEffect(() => {
         const fetchData = async () => {
             try{
                 const response = await axiosInstance.get('protected/');
-                cosole.log('Protected data:', response.data);
+                console.log('Protected data:', response.data);
             }catch(error){
                 console.error('Error fetching protected data:', error);
             }
@@ -26,27 +20,36 @@ const DashBoard = () => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+        const enteredTicker = ticker.trim().toUpperCase();
+        setTicker(enteredTicker);
+        setPrediction(null);
+        setError('');
         setLoading(true);
         try{
-            const response = await axiosInstance.post('predict/', { ticker: ticker });
+            const response = await axiosInstance.post('predict/', { ticker: enteredTicker });
             console.log('Prediction result:', response.data);
             const backendRoot = import.meta.env.VITE_BACKEND_ROOT
-            const plotImgUrl = `${backendRoot}${response.data.plot_img}`;
-            const ma100Url = `${backendRoot}${response.data.plot_100_dma}`;
-            const ma200Url = `${backendRoot}${response.data.plot_200_dma}`;
-            const predictImgUrl = `${backendRoot}${response.data.plot_prediction}`;
-            setPlotImg(plotImgUrl);
-            setMA100Url(ma100Url);
-            setMA200Url(ma200Url);
-            setPredictImg(predictImgUrl);
-            setMSE(response.data.mse);
-            setRMSE(response.data.rmse);
-            setR2(response.data.r2);
-            if (response.data.status === 'error') {
-                setError(response.data.message);
+            if (response.data.status !== 'success') {
+                setError(`No stock name was found with entered ticker value: ${enteredTicker}`);
+                return;
             }
+
+            setPrediction({
+                plotImg: `${backendRoot}${response.data.plot_img}`,
+                ma100: `${backendRoot}${response.data.plot_100_dma}`,
+                ma200: `${backendRoot}${response.data.plot_200_dma}`,
+                predictImg: `${backendRoot}${response.data.plot_prediction}`,
+                mse: response.data.mse,
+                rmse: response.data.rmse,
+                r2: response.data.r2,
+            });
         }catch(error){
             console.error('Error during prediction:', error);
+            if (error.response?.status === 400) {
+                setError(`No stock name was found with entered ticker value: ${enteredTicker}`);
+            } else {
+                setError('Unable to get a prediction right now. Please try again.');
+            }
         }finally{
             setLoading(false);
         }
@@ -64,45 +67,40 @@ const DashBoard = () => {
                     </button>
                 </form>
             </div>
-            <div className='prediction mt-5'>
-                {plotImg && (
+            {prediction && (
+                <>
+                <div className='prediction mt-5'>
                     <div>
                         <h3>Stock Price Chart</h3>
-                        <img src={plotImg} alt="Stock Price Chart" className='img-fluid' />
+                        <img src={prediction.plotImg} alt="Stock Price Chart" className='img-fluid' />
                     </div>
-                )}
-            </div>
-            <div className='prediction mt-5'>
-                {ma100 && (
+                </div>
+                <div className='prediction mt-5'>
                     <div>
                         <h3>100 Day Moving Average</h3>
-                        <img src={ma100} alt="Stock Price Chart" className='img-fluid' />
+                        <img src={prediction.ma100} alt="Stock Price Chart" className='img-fluid' />
                     </div>
-                )}
-            </div>
-            <div className='prediction mt-5'>
-                {ma200 && (
+                </div>
+                <div className='prediction mt-5'>
                     <div>
                         <h3>200 Day Moving Average</h3>
-                        <img src={ma200} alt="Stock Price Chart" className='img-fluid' />
+                        <img src={prediction.ma200} alt="Stock Price Chart" className='img-fluid' />
                     </div>
-                )}
-            </div>
-            <div className='prediction mt-5'>
-                {predictImg && (
+                </div>
+                <div className='prediction mt-5'>
                     <div>
                         <h3>Stock Price Prediction</h3>
-                        <img src={predictImg} alt="Stock Price Chart" className='img-fluid' />
+                        <img src={prediction.predictImg} alt="Stock Price Prediction" className='img-fluid' />
                     </div>
-                )}
-            </div>
-
-            <div className='text-light p-3'>
-                <h4>Model Evaluation</h4>
-                <p>Mean Squared Error (MSE): {mse}</p>
-                <p>Root Mean Squared Error (RMSE): RMSE: {rmse}</p>
-                <p>R-Squared (R2): {r2}</p>
-            </div>
+                </div>
+                <div className='text-light p-3'>
+                    <h4>Model Evaluation</h4>
+                    <p>Mean Squared Error (MSE): {prediction.mse}</p>
+                    <p>Root Mean Squared Error (RMSE): {prediction.rmse}</p>
+                    <p>R-Squared (R2): {prediction.r2}</p>
+                </div>
+                </>
+            )}
         </div>
     </div>
   )
