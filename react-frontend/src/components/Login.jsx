@@ -27,7 +27,12 @@ const Login = () => {
             setError('')
             navigate('/dashboard') // Redirect to home page after successful login
         }catch(error){
-            setError('Invalid credentials')
+            if (error.response?.status === 401) {
+                setError('Invalid credentials')
+            } else {
+                setError('Unable to connect to the backend')
+                console.error('Login request failed:', error)
+            }
         }finally {
             setLoading(false)
         }
